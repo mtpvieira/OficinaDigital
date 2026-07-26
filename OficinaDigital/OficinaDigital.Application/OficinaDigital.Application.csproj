@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <Folder Include="Auth\" />
+      <Folder Include="Clientes\" />
+      <Folder Include="Common\" />
+      <Folder Include="OrdensServico\" />
+      <Folder Include="Veiculos\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\OficinaDigital.Domain\OficinaDigital.Domain.csproj" />
+    </ItemGroup>
+
+</Project>

@@ -1,0 +1,7 @@
+﻿services:
+  oficinadigital.api:
+    image: oficinadigital.api
+    build:
+      context: .
+      dockerfile: OficinaDigital.Api/Dockerfile
+
