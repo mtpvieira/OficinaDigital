@@ -3,6 +3,7 @@ using OficinaDigital.Domain.Catalogo;
 using OficinaDigital.Domain.Clientes;
 using OficinaDigital.Domain.OrdensServico;
 using OficinaDigital.Domain.Veiculos;
+using OficinaDigital.Infrastructure.Persistence.Seed;
 
 namespace OficinaDigital.Infrastructure.Persistence;
 
@@ -19,5 +20,7 @@ public sealed class OficinaDigitalDbContext(DbContextOptions<OficinaDigitalDbCon
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(OficinaDigitalDbContext).Assembly);
         base.OnModelCreating(modelBuilder);
+        
+        //OficinaDigitalSeeder.SeedAsync(this).Wait();
     }
 }

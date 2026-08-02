@@ -1,6 +1,8 @@
 namespace OficinaDigital.Application.Common;
 
+public sealed record TokenGerado(string Token, DateTime ExpiraEm);
+
 public interface IJwtTokenGenerator
 {
-    string GerarToken(string usuario, IEnumerable<string> roles);
+    TokenGerado GerarToken(string usuario, IEnumerable<string> roles);
 }

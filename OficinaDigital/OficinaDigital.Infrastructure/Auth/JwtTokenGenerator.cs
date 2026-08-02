@@ -11,7 +11,7 @@ public sealed class JwtTokenGenerator(IOptions<JwtOptions> options) : IJwtTokenG
 {
     private readonly JwtOptions _options = options.Value;
 
-    public string GerarToken(string usuario, IEnumerable<string> roles)
+    public TokenGerado GerarToken(string usuario, IEnumerable<string> roles)
     {
         var claims = new List<Claim>
         {
@@ -22,14 +22,17 @@ public sealed class JwtTokenGenerator(IOptions<JwtOptions> options) : IJwtTokenG
 
         var chaveAssinatura = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.ChaveSecreta));
         var credenciais = new SigningCredentials(chaveAssinatura, SecurityAlgorithms.HmacSha256);
+        var expiraEm = DateTime.UtcNow.AddMinutes(_options.ExpiracaoMinutos);
 
         var token = new JwtSecurityToken(
             issuer: _options.Emissor,
             audience: _options.Audiencia,
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(_options.ExpiracaoMinutos),
+            expires: expiraEm,
             signingCredentials: credenciais);
 
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        var tokenSerializado = new JwtSecurityTokenHandler().WriteToken(token);
+
+        return new TokenGerado(tokenSerializado, expiraEm);
     }
 }

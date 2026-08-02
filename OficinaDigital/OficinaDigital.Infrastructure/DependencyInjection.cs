@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using OficinaDigital.Application.Auth;
 using OficinaDigital.Application.Common;
 using OficinaDigital.Domain.Catalogo;
 using OficinaDigital.Domain.Clientes;
@@ -30,8 +31,7 @@ public static class DependencyInjection
             }
             else
             {
-                throw new NotSupportedException(
-                    "Persistência relacional ainda não configurada. Ao migrar para PostgreSQL, troque este branch para 'options.UseNpgsql(...)' dentro de AddInfrastructure.");
+                throw new NotSupportedException("Persistência relacional ainda não configurada.");
             }
         });
 
@@ -43,6 +43,9 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         services.AddJwtAuthentication(configuration);
+
+        services.Configure<AdminCredentialsOptions>(configuration.GetSection(AdminCredentialsOptions.SectionName));
+        services.AddScoped<IAdminAuthenticator, AdminAuthenticator>();
 
         return services;
     }

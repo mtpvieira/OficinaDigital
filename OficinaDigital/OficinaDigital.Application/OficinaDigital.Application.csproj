@@ -7,15 +7,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Folder Include="Auth\" />
-      <Folder Include="Clientes\" />
-      <Folder Include="Common\" />
-      <Folder Include="OrdensServico\" />
-      <Folder Include="Veiculos\" />
+      <ProjectReference Include="..\OficinaDigital.Domain\OficinaDigital.Domain.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\OficinaDigital.Domain\OficinaDigital.Domain.csproj" />
+      <PackageReference Include="FluentValidation" Version="12.1.1" />
+      <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
     </ItemGroup>
 
 </Project>

@@ -19,7 +19,8 @@ public sealed class OrdemDeServicoConfiguration : IEntityTypeConfiguration<Ordem
 
         builder.Property(ordem => ordem.ClienteId).IsRequired();
         builder.Property(ordem => ordem.VeiculoId).IsRequired();
-        builder.Property(ordem => ordem.Status).IsRequired();
+        builder.Property(ordem => ordem.Status).HasConversion<int>()
+            .IsRequired();
 
         builder.Property(ordem => ordem.CriadaEm).IsRequired();
         builder.Property(ordem => ordem.EnviadaAprovacaoEm);
@@ -48,7 +49,7 @@ public sealed class OrdemDeServicoConfiguration : IEntityTypeConfiguration<Ordem
 
         builder.OwnsMany(ordem => ordem.ItensServico, item =>
         {
-            item.ToTable("OrdemServicoItensServico");
+            item.ToTable("OrdemServicoItens");
             item.WithOwner().HasForeignKey("OrdemDeServicoId");
             item.HasKey(i => i.Id);
 
@@ -76,7 +77,7 @@ public sealed class OrdemDeServicoConfiguration : IEntityTypeConfiguration<Ordem
 
         builder.OwnsMany(ordem => ordem.ItensPeca, item =>
         {
-            item.ToTable("OrdemServicoItensPeca");
+            item.ToTable("OrdemServicoPecas");
             item.WithOwner().HasForeignKey("OrdemDeServicoId");
             item.HasKey(i => i.Id);
 
