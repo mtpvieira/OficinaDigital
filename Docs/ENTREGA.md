@@ -9,16 +9,14 @@
 | Curso | Pós-Tech — Arquitetura de Sistemas .NET com Azure |
 | Turma | 15SOAT |
 | Fase | 1 — Tech Challenge |
-| Grupo | `<<nome do grupo>>` |
-| Data de entrega | `<<dd/mm/aaaa>>` |
 
 ### Participantes
 
 | Nome | Discord | RM |
 |---|---|---|
-| Kelvin Gabriel Ribeiro | `<<usuario>>` | `<<RM>>` |
-| `<<nome>>` | `<<usuario>>` | `<<RM>>` |
-| `<<nome>>` | `<<usuario>>` | `<<RM>>` |
+| Matheus de Paula Vieira | `<<RM>>` |
+| Igor Henrique Salvador | `<<RM>>` |
+| Kelvin Gabriel Ribeiro | RM376986 |
 
 ## Links
 
@@ -26,11 +24,8 @@
 |---|---|
 | Repositório (privado) | https://github.com/mtpvieira/OficinaDigital |
 | Documentação DDD — Event Storming | [`Docs/Oficina_EventStorming_v2.drawio`](Oficina_EventStorming_v2.drawio) |
-| Vídeo de demonstração | `<<link>>` |
+| Vídeo de demonstração | youtube.com |
 | Relatório de vulnerabilidades | [`Docs/RELATORIO-SEGURANCA.md`](RELATORIO-SEGURANCA.md) |
-
-O usuário **`soat-architecture`** foi adicionado como colaborador do repositório privado em
-`<<dd/mm/aaaa>>`.
 
 ## O sistema
 
