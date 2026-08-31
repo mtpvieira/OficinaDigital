@@ -12,7 +12,7 @@
 
 ### Participantes
 
-| Nome | Discord | RM |
+| Nome | RM |
 |---|---|---|
 | Matheus de Paula Vieira | `<<RM>>` |
 | Igor Henrique Salvador | `<<RM>>` |
