@@ -1,0 +1,67 @@
+services:
+  banco:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: oficina-banco
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${SA_PASSWORD:?defina SA_PASSWORD no arquivo .env}
+      MSSQL_PID: Developer
+    ports:
+      - "127.0.0.1:1433:1433"
+    volumes:
+      - dados-sqlserver:/var/opt/mssql
+    networks:
+      - oficina
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' || exit 1"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: oficina-api
+    depends_on:
+      banco:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      ASPNETCORE_HTTP_PORTS: "8080"
+
+      ConnectionStrings__SqlServer: "Server=banco,1433;Database=OficinaDigital;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True;Encrypt=True;MultipleActiveResultSets=False"
+
+      Jwt__ChaveSecreta: ${JWT_CHAVE:?defina JWT_CHAVE no arquivo .env}
+      Jwt__Emissor: OficinaDigital
+      Jwt__Audiencia: OficinaDigital.Api
+      Jwt__ExpiracaoEmMinutos: "60"
+
+      Seed__EmailAdministrador: ${ADMIN_EMAIL:-admin@oficinadigital.local}
+      Seed__SenhaAdministrador: ${ADMIN_SENHA:?defina ADMIN_SENHA no arquivo .env}
+
+      AplicarMigrationsNaInicializacao: "true"
+    ports:
+      - "8080:8080"
+    networks:
+      - oficina
+    healthcheck:
+      test: ["CMD", "dotnet", "OficinaDigital.Api.dll", "--healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+volumes:
+  dados-sqlserver:
+
+networks:
+  oficina:
+    driver: bridge

@@ -1,0 +1,425 @@
+### Roteiro de demonstração da API — Oficina Digital
+###
+### Escrito para a extensão REST Client do VS Code. Execute de cima para baixo: as
+### variáveis são capturadas da resposta anterior e não é preciso copiar GUID à mão.
+###
+### No Rider o mecanismo de captura é outro. Se for usar o Rider, ou adapte com
+### response handlers, ou rode pelo Swagger copiando os ids.
+###
+### Antes de gravar:  docker compose down -v  &&  docker compose up -d --build
+
+@host = http://localhost:8080
+@admin = admin@oficinadigital.local
+@senha = Oficina@Local123
+
+@documentoCliente = 12345678909
+@placaCliente = BRA2E19
+
+
+###############################################################################
+# 1. AUTENTICAÇÃO
+###############################################################################
+
+### Sem token, a API administrativa recusa (401)
+GET {{host}}/api/clientes
+
+### Login do administrador
+# @name login
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{admin}}",
+  "senha": "{{senha}}"
+}
+
+###
+@token = {{login.response.body.accessToken}}
+
+### Senha errada devolve 401, sem dizer se o usuário existe
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{admin}}",
+  "senha": "SenhaErrada@123"
+}
+
+
+###############################################################################
+# 2. VALIDAÇÃO DE DADOS SENSÍVEIS
+###############################################################################
+
+### CPF com dígito verificador inválido é recusado (400)
+POST {{host}}/api/clientes
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Cliente Invalido",
+  "documento": "52998224724",
+  "contatos": [{ "canal": "EMAIL", "valor": "invalido@exemplo.com" }]
+}
+
+### Cliente ainda não existe: 404 leva ao cadastro
+GET {{host}}/api/clientes/por-documento/{{documentoCliente}}
+Authorization: Bearer {{token}}
+
+
+###############################################################################
+# 3. CADASTRO
+###############################################################################
+
+### Cadastrar cliente
+# @name cliente
+POST {{host}}/api/clientes
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Carlos Andrade",
+  "documento": "{{documentoCliente}}",
+  "contatos": [
+    { "canal": "EMAIL", "valor": "carlos.andrade@exemplo.com" },
+    { "canal": "SMS", "valor": "11987654321" }
+  ],
+  "endereco": {
+    "logradouro": "Rua das Oficinas",
+    "numero": "1200",
+    "cidade": "São Paulo",
+    "uf": "SP",
+    "cep": "01310-100"
+  }
+}
+
+###
+@clienteId = {{cliente.response.body.id}}
+
+### Placa fora dos dois padrões é recusada (400)
+POST {{host}}/api/veiculos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "clienteId": "{{clienteId}}",
+  "placa": "1234ABC",
+  "marca": "Volkswagen",
+  "modelo": "Gol",
+  "anoFabricacao": 2019
+}
+
+### Cadastrar veículo com placa Mercosul
+# @name veiculo
+POST {{host}}/api/veiculos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "clienteId": "{{clienteId}}",
+  "placa": "{{placaCliente}}",
+  "marca": "Volkswagen",
+  "modelo": "Gol 1.6",
+  "anoFabricacao": 2019,
+  "cor": "Branco"
+}
+
+###
+@veiculoId = {{veiculo.response.body.id}}
+
+
+###############################################################################
+# 4. CATÁLOGO E ESTOQUE
+###############################################################################
+
+### Cadastrar serviço
+# @name servico
+POST {{host}}/api/servicos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Troca de pastilhas de freio",
+  "descricao": "Substituição das pastilhas dianteiras",
+  "preco": 320.00,
+  "tempoPadraoMinutos": 120
+}
+
+###
+@servicoId = {{servico.response.body.id}}
+
+### Cadastrar peça (a posição de estoque nasce zerada, por política)
+# @name peca
+POST {{host}}/api/pecas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "sku": "PAST-FRE-DIANT",
+  "descricao": "Pastilha de freio dianteira (jogo)",
+  "unidade": "PC",
+  "precoVenda": 215.00,
+  "estoqueMinimo": 4
+}
+
+###
+@pecaId = {{peca.response.body.id}}
+
+### Estoque zerado e já abaixo do mínimo
+GET {{host}}/api/estoque/pecas/{{pecaId}}
+Authorization: Bearer {{token}}
+
+### Registrar entrada de 10 unidades
+POST {{host}}/api/estoque/pecas/{{pecaId}}/entradas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "quantidade": 10,
+  "custoUnitario": 130.00
+}
+
+
+###############################################################################
+# 5. ABERTURA E DIAGNÓSTICO DA OS
+###############################################################################
+
+### Abrir a OS — status RECEBIDA
+# @name os
+POST {{host}}/api/ordens-servico
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "clienteId": "{{clienteId}}",
+  "veiculoId": "{{veiculoId}}",
+  "descricaoDoProblema": "Barulho ao frear e pedal baixo"
+}
+
+###
+@osId = {{os.response.body.id}}
+
+### Segunda OS para o mesmo veículo é recusada (409)
+POST {{host}}/api/ordens-servico
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "clienteId": "{{clienteId}}",
+  "veiculoId": "{{veiculoId}}",
+  "descricaoDoProblema": "Tentativa duplicada"
+}
+
+### Iniciar diagnóstico — status EM_DIAGNOSTICO
+POST {{host}}/api/ordens-servico/{{osId}}/diagnostico/iniciar
+Authorization: Bearer {{token}}
+
+### Registrar o serviço (preço congelado na data)
+POST {{host}}/api/ordens-servico/{{osId}}/servicos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "servicos": [{ "servicoId": "{{servicoId}}" }]
+}
+
+### Registrar a peça — a reserva no estoque acontece por política
+POST {{host}}/api/ordens-servico/{{osId}}/pecas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "pecas": [{ "pecaId": "{{pecaId}}", "quantidade": 2 }]
+}
+
+### Saldo 10, reservado 2, disponível 8 — o saldo físico não mudou
+GET {{host}}/api/estoque/pecas/{{pecaId}}
+Authorization: Bearer {{token}}
+
+### Finalizar o diagnóstico — o orçamento é gerado sozinho
+# @name diagnostico
+POST {{host}}/api/ordens-servico/{{osId}}/diagnostico/finalizar
+Authorization: Bearer {{token}}
+
+###
+@orcamentoId = {{diagnostico.response.body.orcamentoVigenteId}}
+
+
+###############################################################################
+# 6. ORÇAMENTO
+###############################################################################
+
+### Orçamento gerado automaticamente: 320 + 2 x 215 = 750
+### (o id já veio no campo orcamentoVigenteId da resposta anterior)
+GET {{host}}/api/orcamentos/da-os/{{osId}}
+Authorization: Bearer {{token}}
+
+### Enviar ao cliente — status AGUARDANDO_APROVACAO
+POST {{host}}/api/orcamentos/{{orcamentoId}}/envio
+Authorization: Bearer {{token}}
+
+
+###############################################################################
+# 7. APP DO CLIENTE
+###############################################################################
+
+### Login do cliente: CPF + placa do próprio veículo
+# @name loginCliente
+POST {{host}}/api/auth/login-cliente
+Content-Type: application/json
+
+{
+  "documento": "{{documentoCliente}}",
+  "placa": "{{placaCliente}}"
+}
+
+###
+@tokenCliente = {{loginCliente.response.body.accessToken}}
+
+### O cliente acompanha a própria OS
+GET {{host}}/api/minhas-ordens/{{osId}}
+Authorization: Bearer {{tokenCliente}}
+
+### O token do cliente não abre a API administrativa (403)
+GET {{host}}/api/clientes
+Authorization: Bearer {{tokenCliente}}
+
+### Aprovar o orçamento pelo app
+POST {{host}}/api/orcamentos/{{orcamentoId}}/resposta
+Authorization: Bearer {{tokenCliente}}
+Content-Type: application/json
+
+{
+  "decisao": "APROVADO"
+}
+
+### A resposta é irreversível: tentar de novo é recusado (400)
+POST {{host}}/api/orcamentos/{{orcamentoId}}/resposta
+Authorization: Bearer {{tokenCliente}}
+Content-Type: application/json
+
+{
+  "decisao": "REPROVADO"
+}
+
+
+###############################################################################
+# 8. EXECUÇÃO E ENTREGA
+###############################################################################
+
+### Iniciar o serviço — as peças saem do estoque por política
+POST {{host}}/api/ordens-servico/{{osId}}/execucao/iniciar
+Authorization: Bearer {{token}}
+
+### Saldo caiu para 8 e o reservado zerou: a subtração consumiu a reserva
+GET {{host}}/api/estoque/pecas/{{pecaId}}
+Authorization: Bearer {{token}}
+
+### Concluir o serviço — duração real registrada
+POST {{host}}/api/ordens-servico/{{osId}}/execucao/finalizar
+Authorization: Bearer {{token}}
+
+### Registrar a entrega — status ENTREGUE
+POST {{host}}/api/ordens-servico/{{osId}}/entrega
+Authorization: Bearer {{token}}
+
+
+###############################################################################
+# 9. GESTÃO E INDICADORES
+###############################################################################
+
+### Painel de OS por status
+GET {{host}}/api/ordens-servico/painel
+Authorization: Bearer {{token}}
+
+### Listagem de OS
+GET {{host}}/api/ordens-servico?pagina=1&tamanhoPagina=10
+Authorization: Bearer {{token}}
+
+### Tempo médio de execução por tipo de serviço, contra o tempo padrão do catálogo
+GET {{host}}/api/indicadores/tempo-medio-execucao
+Authorization: Bearer {{token}}
+
+### Alertas de estoque mínimo
+GET {{host}}/api/estoque/alertas
+Authorization: Bearer {{token}}
+
+
+###############################################################################
+# 10. FLUXO DE EXCEÇÃO — FALTA DE PEÇA  (grave só se sobrar tempo)
+###############################################################################
+
+### Peça sem estoque
+# @name pecaSemEstoque
+POST {{host}}/api/pecas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "sku": "CORREIA-DENT-99",
+  "descricao": "Correia dentada",
+  "unidade": "UN",
+  "precoVenda": 310.00,
+  "estoqueMinimo": 2
+}
+
+###
+@pecaFaltandoId = {{pecaSemEstoque.response.body.id}}
+
+### Segundo veículo do mesmo cliente
+# @name veiculo2
+POST {{host}}/api/veiculos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "clienteId": "{{clienteId}}",
+  "placa": "QWE1R23",
+  "marca": "Fiat",
+  "modelo": "Argo",
+  "anoFabricacao": 2021
+}
+
+###
+@veiculo2Id = {{veiculo2.response.body.id}}
+
+### Nova OS
+# @name os2
+POST {{host}}/api/ordens-servico
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "clienteId": "{{clienteId}}",
+  "veiculoId": "{{veiculo2Id}}",
+  "descricaoDoProblema": "Troca de correia dentada"
+}
+
+###
+@os2Id = {{os2.response.body.id}}
+
+###
+POST {{host}}/api/ordens-servico/{{os2Id}}/diagnostico/iniciar
+Authorization: Bearer {{token}}
+
+### Sem saldo, o item volta como PENDENTE_COMPRA
+POST {{host}}/api/ordens-servico/{{os2Id}}/pecas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "pecas": [{ "pecaId": "{{pecaFaltandoId}}", "quantidade": 1 }]
+}
+
+### A peça chega: a política reserva sozinha para a OS que estava na fila
+POST {{host}}/api/estoque/pecas/{{pecaFaltandoId}}/entradas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "quantidade": 5,
+  "custoUnitario": 190.00
+}
+
+### O item da OS agora está RESERVADA, sem ninguém ter pedido
+GET {{host}}/api/ordens-servico/{{os2Id}}
+Authorization: Bearer {{token}}

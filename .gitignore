@@ -56,3 +56,12 @@ CodeCoverage/
 TestResult.xml
 nunit-*.xml
 /OficinaDigital/.idea
+
+.env
+.env.local
+!.env.example
+
+TestResults/
+coverage*.xml
+
+.vs/
