@@ -12,11 +12,9 @@
 
 ### Participantes
 
-| Nome | RM |
-|---|---|---|
-| Matheus de Paula Vieira | `<<RM>>` |
-| Igor Henrique Salvador | `<<RM>>` |
-| Kelvin Gabriel Ribeiro | RM376986 |
+Matheus de Paula Vieira - 
+Igor Henrique Salvador - 
+Kelvin Gabriel Ribeiro - RM376986
 
 ## Links
 
